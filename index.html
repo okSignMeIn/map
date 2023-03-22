@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>OpenLayers</title>
+    <style>
+      @import "node_modules/ol/ol.css";
+    </style>
+    <style>
+      html,body {
+        margin: 0;
+      }
+      #container {
+        display: flex;
+        height: 100vh;
+        width: 100vw;
+        background-color: black;
+      }
+      #map-container {
+        margin: 0;
+        height: 100vh;
+        width: 50vw;
+        font-family: sans-serif;
+      }
+      #image {
+        height: 100%;
+        width: 50vw;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <div id="map-container"></div>
+      <div id="image">
+        <img src="https://picsum.photos/id/237/200/300" alt="" />
+      </div>
+    </div>
+    <script src="./main.js" type="module"></script>
+  </body>
+</html>
