@@ -7,30 +7,19 @@ import VectorSource from 'ol/source/Vector';
 import { Circle as CircleStyle, Fill, Stroke, Style } from "ol/style.js";
 import Feature from "ol/Feature";
 import Point from "ol/geom/Point";
+import Select from 'ol/interaction/Select';
 
-const pointStyleFunction = () => {
-  return new Style({
-    image: new CircleStyle({
-      radius: 4,
-      fill: new Fill({ color: "red" }),
-      stroke: new Stroke({ color: "yellow", width: 2 }),
-    }),
-  });
-};
+// Since, the assignment that was given had only 10 images, therefore, I am only showing those coordinates for which i had images when test=true
 
-const pointStyleOnClick = () => {
-  return new Style({
-    image: new CircleStyle({
-      radius: 5,
-      fill: new Fill({ color: "blue" }),
-      stroke: new Stroke({ color: "yellow", width: 2 }),
-    }),
-  });
-};
+let test=true;
 
-const features = [];
+let features = [];
+let imageSource = [];
+let imgcoord = [];
 
-const coordinates = [
+// Extracted the coordinates from the attached file and stored it in below array.
+
+const COORDINATES = [
   [10.93376479, 50.98380407],
   [10.93377411, 50.98376802],
   [10.93378524, 50.9837232],
@@ -2265,6 +2254,37 @@ const coordinates = [
   [10.94643295, 50.99927424]
 ];
 
+// Storing the paths of the images given in imageSource
+
+for (let index = 0; index < 10; index++) {
+  imageSource.push("images/HMTpano_000001_00000".concat(index).concat(".jpg"))
+}
+
+// only run this code if TEST is true
+function fillImgCoordIfTest() {
+  for (let i = 0; i < 10; i++) {
+    imgcoord.push(i);
+  }
+  return imgcoord;
+}
+test && fillImgCoordIfTest();
+
+// Default Styling for each point of vectorLayer 
+// vectorLayer shows the coordinates on the map
+
+const pointStyleFunction = () => {
+  return new Style({
+    image: new CircleStyle({
+      radius: 4,
+      fill: new Fill({ color: "red" }),
+      stroke: new Stroke({ color: "yellow", width: 2 }),
+    }),
+  });
+};
+
+// Creating a feature and appending it to feature array so that it can be added as a point
+// to show a coordinate in vectorLayer
+
 const iterate = (coordinates) => {
   coordinates.forEach((coordinate) => {
     let coord= fromLonLat(coordinate);
@@ -2275,14 +2295,21 @@ const iterate = (coordinates) => {
     )
   })
 }
+iterate(test ? imgcoord : COORDINATES);
 
-iterate(coordinates);
-
-console.log("fea1",features);
+// Initilaise vector source and layer 
 
 let vectorSource = new VectorSource({
   features: features,
 });
+let vectorLayer = new VectorLayer({
+  source: vectorSource,
+  style: pointStyleFunction,
+});
+
+// Initialize a new map with 2 layers - Tile and Vector
+// TileLayer shows the basic map of the world - continents, ocean
+// VectorLayer shows the coordinates on the map 
 
 const map = new Map({
   target: 'map-container',
@@ -2290,10 +2317,7 @@ const map = new Map({
     new TileLayer({
       source: new OSM(),
     }),
-    new VectorLayer({
-      source: vectorSource,
-      style: pointStyleFunction,
-    })
+    vectorLayer
   ],
   view: new View({
     center: fromLonLat([10.93376479, 50.98380407]),
@@ -2301,11 +2325,69 @@ const map = new Map({
   }),
 });
 
-// console.log("source",vectorSource.getFeatures());
+// Coordinates styling when they are clicked
 
-map.on('click', function(e) {
-  map.forEachFeatureAtPixel(e.pixel, function(feature) {
-    let newPixel = e.pixel;
-    feature.setStyle(pointStyleOnClick);
-  })
+let selectStyle = new Style({
+  image: new CircleStyle({
+    radius: 5,
+    fill: new Fill({ color: "blue" }),
+    stroke: new Stroke({ color: "yellow", width: 2 }),
+  }),
 })
+
+// Added interaction so that we can interact with the coordinates and allow a user to
+// identify which coordinate he has clicked
+
+let selectInteraction = new Select({
+  layers: [vectorLayer],
+  style: [selectStyle]
+});
+map.addInteraction(selectInteraction);
+
+// Default image state that has to rendered on initial loading of the page
+
+let imgState= "images/HMTpano_000001_000000.jpg";
+
+// For each coordinate click, update the image if it's available on the basis of coordinates
+
+selectInteraction.on('select', function(event) {
+  let p = event.mapBrowserEvent.pixel;
+  map.forEachFeatureAtPixel(p, function (feature) {
+    let lon =  feature.getProperties().geometry.getCoordinates()[0];
+    let lat = feature.getProperties().geometry.getCoordinates()[1];
+    let c = [lon,lat]
+    for(let i=0;i<imgcoord.length;i++) {
+      let cx=c[0];
+      let cy=c[1];
+      let imgx=fromLonLat(imgcoord[i])[0];
+      let imgy=fromLonLat(imgcoord[i])[1];
+      if(cx==imgx && cy==imgy) {
+        imgState=imageSource[i];
+
+        // Trigger an event to change image
+        const event = new CustomEvent('imgChange');
+        window.dispatchEvent(event);
+      }
+    }
+  })
+}); 
+
+function handleImageChange() {
+  console.log("trigger");
+    const newPanorama = new PANOLENS.ImagePanorama(imgState);
+    viewer.add(newPanorama);
+    viewer.setPanorama( newPanorama );
+}
+
+// Adding a event listener to custom event
+
+window.addEventListener('imgChange', handleImageChange);
+
+const imageContainer = document.querySelector("#image");
+const viewer = new PANOLENS.Viewer({
+  container: imageContainer,
+});
+
+// Dispatching event for initial render
+window.dispatchEvent(new CustomEvent('imgChange'));
+
