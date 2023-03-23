@@ -28,7 +28,7 @@ for (let index = 0; index < 10; index++) {
 // only run this code if TEST is true
 function fillImgCoordIfTest() {
   for (let i = 0; i < 10; i++) {
-    imgcoord.push(i);
+    imgcoord.push(COORDINATES[i]);
   }
   return imgcoord;
 }
