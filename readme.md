@@ -1,4 +1,2 @@
-To run the application, install the dependencies by running:
-npm install
-then run the application by:
-npm start
+Install the dependencies by npm install.
+now start by npm start
